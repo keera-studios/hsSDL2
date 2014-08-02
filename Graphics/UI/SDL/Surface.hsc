@@ -12,16 +12,19 @@ module Graphics.UI.SDL.Surface
     , setColorKey
     , setSurfaceAlphaMod
     , unlockSurface
+    , surfaceGetWidth
+    , surfaceGetHeight
     ) where
 
 import Data.Vector.Storable (Vector)
-import Foreign
+import Foreign hiding (unsafePerformIO)
 import Foreign.C
 import Graphics.UI.SDL.Color (Color)
 import Graphics.UI.SDL.Rect (Rect)
 import Graphics.UI.SDL.Utilities (fatalSDLBool)
 import Graphics.UI.SDL.Types (RWopsStruct, Surface, SurfaceStruct)
 import Graphics.UI.SDL.Raw
+import System.IO.Unsafe (unsafePerformIO)
 
 import qualified Data.Vector.Storable as V
 import qualified Graphics.UI.SDL.RWOps as RWOps
@@ -154,3 +157,20 @@ doBlit name f srcSurface srcRect dstSurface dstRect =
   maybeWith with dstRect $ \dstRectPtr ->
   fatalSDLBool name $
     f srcSurfacePtr srcRectPtr dstSurfacePtr dstRectPtr
+
+surfaceGetWidth :: Surface -> Int
+surfaceGetWidth surface
+    = fI $ unsafePerformIO $
+      withForeignPtr surface $
+      (\hs -> ((#peek SDL_Surface, w) hs))
+ where fI :: CInt -> Int
+       fI = fromIntegral
+
+surfaceGetHeight :: Surface -> Int
+surfaceGetHeight surface
+    = fI $ unsafePerformIO $
+      withForeignPtr surface $
+      (\hs -> ((#peek SDL_Surface, h) hs))
+ where fI :: CInt -> Int
+       fI = fromIntegral
+
