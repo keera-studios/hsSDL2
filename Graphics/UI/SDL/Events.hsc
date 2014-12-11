@@ -75,7 +75,9 @@ data EventData
                , mouseWheelHorizontalScroll :: Int32
                , mouseWheelVerticalScroll :: Int32
                }
-  | JoyAxis -- TODO
+  | JoyAxis { joyAxisAxis :: Word8
+            , joyAxisAmount :: Int16
+            }
   | JoyBall -- TODO
   | JoyHat -- TODO
   | JoyButton -- TODO
@@ -198,7 +200,9 @@ instance Storable Event where
                      <*> #{peek SDL_MouseWheelEvent, x} ptr
                      <*> #{peek SDL_MouseWheelEvent, y} ptr
 
-      | isJoyAxis e = pure JoyAxis
+      | isJoyAxis e =
+          JoyAxis <$> #{peek SDL_JoyAxisEvent, axis} ptr
+                  <*> #{peek SDL_JoyAxisEvent, value} ptr
       | isJoyBall e = pure JoyBall
       | isJoyHat e = pure JoyHat
       | isJoyButton e = pure JoyButton
@@ -331,3 +335,6 @@ mouseStateGetter getter
        [x, y] <- mapM peek [xPtr, yPtr]
        return (fromIntegral x, fromIntegral y, filter (mousePressed ret) allButtons)
     where allButtons = [LeftButton, MiddleButton, RightButton, MouseX1, MouseX2]
+
+foreign import ccall "SDL_NumJoysticks" sdlNumJoysticks :: IO CInt
+foreign import ccall "SDL_JoystickOpen" sdlJoystickOpen :: CInt -> IO (Ptr ()) -- Wrong return type
